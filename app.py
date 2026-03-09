@@ -405,6 +405,45 @@ with tab1:
                  use_container_width=True, height=520, hide_index=True)
     st.caption(f"A mostrar {len(df_f):,} de {len(df):,} registos totais")
 
+    # ── Exportação rápida de emails do filtro actual ──
+    df_em_f = df_f[df_f["email"].str.len() > 3].drop_duplicates(subset=["email"])
+    n_em_f  = len(df_em_f)
+    if n_em_f > 0:
+        st.markdown("---")
+        st.markdown(f"**📧 Exportação rápida — {n_em_f:,} emails no filtro actual:**")
+        eq1, eq2, eq3 = st.columns(3)
+        with eq1:
+            txt_bcc = "; ".join(sorted(df_em_f["email"].tolist()))
+            st.download_button(
+                f"⬇️ BCC Outlook ({n_em_f:,})",
+                data=txt_bcc.encode("utf-8"),
+                file_name=f"emails_BCC_{datetime.now().strftime('%Y%m%d_%H%M')}.txt",
+                mime="text/plain", use_container_width=True, type="primary",
+                help="Separados por ; — cola no campo Cco do Outlook",
+            )
+        with eq2:
+            txt_linhas = "\n".join(sorted(df_em_f["email"].tolist()))
+            st.download_button(
+                f"⬇️ Um por linha ({n_em_f:,})",
+                data=txt_linhas.encode("utf-8"),
+                file_name=f"emails_{datetime.now().strftime('%Y%m%d_%H%M')}.txt",
+                mime="text/plain", use_container_width=True,
+                help="Um email por linha",
+            )
+        with eq3:
+            csv_em = df_em_f[["categoria","designacao","nome_dirigente","email"]].to_csv(
+                index=False, encoding="utf-8-sig").encode("utf-8-sig")
+            st.download_button(
+                f"⬇️ CSV com nomes ({n_em_f:,})",
+                data=csv_em,
+                file_name=f"emails_nomes_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
+                mime="text/csv", use_container_width=True,
+                help="CSV com categoria, entidade, nome e email",
+            )
+    else:
+        if len(df_f) > 0:
+            st.caption("Nenhum registo com email no filtro actual.")
+
 
 # ══════════════════════════════════════════════════════
 # TAB 2 — SELECIONAR & COPIAR EMAILS
@@ -711,11 +750,11 @@ with tab4:
     n_unem = n_tot - n_mail
     st.info(f"Base actual: **{n_tot:,}** registos  |  **{n_mail:,}** com email  |  **{n_unem:,}** sem email")
 
-    cd1, cd2 = st.columns(2)
+    cd1, cd2, cd3 = st.columns(3)
     with cd1:
         st.markdown("**Excel completo** (uma sheet por categoria)")
         st.download_button(
-            "⬇️ Descarregar Excel completo",
+            "⬇️ Excel completo",
             data=df_to_excel_bytes(df_dl),
             file_name=f"AP_Contactos_{datetime.now().strftime('%Y%m%d')}.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -723,12 +762,22 @@ with tab4:
             type="primary",
         )
     with cd2:
-        st.markdown("**CSV filtrado** (só os registos visíveis nos filtros)")
+        st.markdown(f"**Excel filtrado** ({len(df_f):,} registos visíveis)")
+        st.download_button(
+            "⬇️ Excel filtrado",
+            data=df_to_excel_bytes(df_f.drop(columns=["id"], errors="ignore")),
+            file_name=f"AP_Contactos_filtrado_{datetime.now().strftime('%Y%m%d')}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True,
+            type="primary",
+        )
+    with cd3:
+        st.markdown(f"**CSV filtrado** ({len(df_f):,} registos visíveis)")
         csv_b = (df_f.drop(columns=["id"], errors="ignore")
                  .to_csv(index=False, encoding="utf-8-sig")
                  .encode("utf-8-sig"))
         st.download_button(
-            "⬇️ Descarregar CSV filtrado",
+            "⬇️ CSV filtrado",
             data=csv_b,
             file_name=f"AP_Contactos_filtrado_{datetime.now().strftime('%Y%m%d')}.csv",
             mime="text/csv",
