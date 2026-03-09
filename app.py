@@ -326,8 +326,12 @@ df = st.session_state["df"]   # referência viva — actualiza automaticamente
 with st.sidebar:
     pesquisa = st.text_input("🔎 Pesquisar", "")
     cats_sel = st.multiselect("Categoria", sorted(df["categoria"].dropna().unique()))
-    min_disp = sorted(m for m in df["ministerio"].fillna("").unique() if m)
-    min_sel  = st.multiselect("Ministério", min_disp)
+    _prefixos = ("Ministério", "Secretaria", "Presidência", "Vice-Presidência")
+    min_disp = sorted(
+        m for m in df["ministerio"].fillna("").unique()
+        if m and any(m.startswith(p) for p in _prefixos)
+    )
+    min_sel  = st.multiselect("Ministério / Tutela", min_disp)
     so_email = st.checkbox("Só com email", value=False)
     st.markdown("---")
     if st.button("🗑️ Limpar & recarregar", use_container_width=True):
@@ -762,27 +766,35 @@ with tab4:
             type="primary",
         )
     with cd2:
-        st.markdown(f"**Excel filtrado** ({len(df_f):,} registos visíveis)")
-        st.download_button(
-            "⬇️ Excel filtrado",
-            data=df_to_excel_bytes(df_f.drop(columns=["id"], errors="ignore")),
-            file_name=f"AP_Contactos_filtrado_{datetime.now().strftime('%Y%m%d')}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            use_container_width=True,
-            type="primary",
-        )
+        tem_filtro = bool(pesquisa or cats_sel or min_sel or so_email)
+        lbl_xl_f = f"Excel filtrado ({len(df_f):,} registos)" if tem_filtro else "Excel filtrado (sem filtros activos)"
+        st.markdown(f"**{lbl_xl_f}**")
+        if not tem_filtro:
+            st.warning("Activa pelo menos um filtro na barra lateral para usar esta opção.", icon="⚠️")
+        else:
+            st.download_button(
+                f"⬇️ Excel filtrado ({len(df_f):,})",
+                data=df_to_excel_bytes(df_f.drop(columns=["id"], errors="ignore")),
+                file_name=f"AP_Contactos_filtrado_{datetime.now().strftime('%Y%m%d')}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True,
+                type="primary",
+            )
     with cd3:
         st.markdown(f"**CSV filtrado** ({len(df_f):,} registos visíveis)")
-        csv_b = (df_f.drop(columns=["id"], errors="ignore")
-                 .to_csv(index=False, encoding="utf-8-sig")
-                 .encode("utf-8-sig"))
-        st.download_button(
-            "⬇️ CSV filtrado",
-            data=csv_b,
-            file_name=f"AP_Contactos_filtrado_{datetime.now().strftime('%Y%m%d')}.csv",
-            mime="text/csv",
-            use_container_width=True,
-        )
+        if not tem_filtro:
+            st.warning("Activa pelo menos um filtro na barra lateral.", icon="⚠️")
+        else:
+            csv_b = (df_f.drop(columns=["id"], errors="ignore")
+                     .to_csv(index=False, encoding="utf-8-sig")
+                     .encode("utf-8-sig"))
+            st.download_button(
+                f"⬇️ CSV filtrado ({len(df_f):,})",
+                data=csv_b,
+                file_name=f"AP_Contactos_filtrado_{datetime.now().strftime('%Y%m%d')}.csv",
+                mime="text/csv",
+                use_container_width=True,
+            )
 
     st.markdown("---")
     st.markdown("**Cobertura de email por categoria:**")
