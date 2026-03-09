@@ -217,6 +217,52 @@ def fundir_com_base(df_novo: pd.DataFrame) -> tuple:
 
 
 # ─────────────────────────────────────────────────────
+# ATUALIZAR BASE COM SIOE
+# ─────────────────────────────────────────────────────
+def atualizar_com_sioe(df_novo: pd.DataFrame) -> tuple:
+    # Sobrescreve campos dos registos existentes com dados SIOE mais recentes.
+    # Acrescenta emails novos normalmente.
+    # Devolve (n_atualizados, n_adicionados).
+    df_novo = garantir_cols(df_novo.copy())
+    df_base = st.session_state["df"].copy()
+
+    campos_atualizar = ["nome_dirigente", "orgao_direcao", "contacto",
+                        "ministerio", "sigla_entidade", "tipo_entidade"]
+
+    emails_novos_all = df_novo[df_novo["email"].str.len() > 3]["email"].str.lower()
+    emails_base_all  = df_base[df_base["email"].str.len() > 3]["email"].str.lower()
+    emails_comuns    = set(emails_novos_all) & set(emails_base_all)
+    emails_so_novos  = set(emails_novos_all) - set(emails_base_all)
+
+    n_atualizados = 0
+    for email in emails_comuns:
+        mask_base = df_base["email"].str.lower() == email
+        mask_novo = df_novo["email"].str.lower() == email
+        if not mask_novo.any():
+            continue
+        row_novo = df_novo[mask_novo].iloc[0]
+        for campo in campos_atualizar:
+            novo_val = str(row_novo.get(campo, "")).strip()
+            if novo_val and novo_val not in ("nan", "None", ""):
+                df_base.loc[mask_base, campo] = novo_val
+        df_base.loc[mask_base, "fonte"] = "SIOE (actualizado)"
+        n_atualizados += 1
+
+    # Acrescentar emails novos
+    df_so_novos = df_novo[df_novo["email"].isin(emails_so_novos) | (df_novo["email"] == "")]
+    n_adicionados = 0
+    if not df_so_novos.empty:
+        id_max = int(df_base["id"].max()) + 1
+        df_so_novos = df_so_novos.reset_index(drop=True).copy()
+        df_so_novos["id"] = df_so_novos.index + id_max
+        df_base = pd.concat([df_base, df_so_novos[COLS_BASE]], ignore_index=True)
+        n_adicionados = len(df_so_novos)
+
+    st.session_state["df"] = df_base
+    return n_atualizados, n_adicionados
+
+
+# ─────────────────────────────────────────────────────
 # EXPORTAR EXCEL
 # ─────────────────────────────────────────────────────
 def df_to_excel_bytes(df: pd.DataFrame) -> bytes:
@@ -616,13 +662,30 @@ with tab3:
             with cm:
                 st.metric("Entidades no ficheiro SIOE",
                           f"{n_lin:,}" if isinstance(n_lin, int) else n_lin)
+                modo_atualizacao = st.toggle(
+                    "🔄 Modo actualização",
+                    value=False,
+                    help=(
+                        "Activado: sobrescreve dirigente, cargo, telefone e ministério "
+                        "dos registos existentes com os dados mais recentes do SIOE, "
+                        "e acrescenta os novos.\n\n"
+                        "Desactivado: só acrescenta registos com emails novos."
+                    ),
+                )
                 btn_sioe = st.button("🚀 Importar do SIOE", type="primary", use_container_width=True)
             with ci:
-                st.info(
-                    "Extrai automaticamente: designação, sigla, ministério, tipo de entidade, "
-                    "email, telefone e dirigente responsável.\n\n"
-                    "Não duplica emails já existentes na base principal."
-                )
+                if modo_atualizacao:
+                    st.warning(
+                        "**Modo actualização activo** — os campos nome do dirigente, cargo, "
+                        "telefone e ministério dos registos já existentes serão sobrescritos "
+                        "com os dados do SIOE. Os emails não mudam.", icon="🔄"
+                    )
+                else:
+                    st.info(
+                        "Extrai automaticamente: designação, sigla, ministério, tipo de entidade, "
+                        "email, telefone e dirigente responsável.\n\n"
+                        "Não duplica emails já existentes na base principal."
+                    )
 
             if btn_sioe:
                 with st.spinner("A processar o SIOE… (pode demorar ~10 segundos)"):
@@ -630,13 +693,22 @@ with tab3:
                         df_novo = importar_sioe(ext_bytes)
                         if df_novo.empty:
                             st.error("Nenhum registo válido encontrado no ficheiro.")
+                        elif modo_atualizacao:
+                            n_upd, n_add = atualizar_com_sioe(df_novo)
+                            st.session_state["import_msg"] = {
+                                "texto": (
+                                    f"🔄 Actualização concluída! "
+                                    f"**{n_upd:,}** registos actualizados, "
+                                    f"**{n_add:,}** novos acrescentados. "
+                                    f"Base agora tem **{len(st.session_state['df']):,}** registos."
+                                )
+                            }
+                            st.rerun()
                         else:
                             n_add, n_em = fundir_com_base(df_novo)
                             if n_add == 0:
                                 st.warning("Todos os registos do SIOE já existem na base (emails duplicados).")
                             else:
-                                por_cat = df_novo["categoria"].value_counts().head(10).to_dict()
-                                linhas_cat = "\n".join(f"• {cat}: {n:,}" for cat, n in por_cat.items())
                                 st.session_state["import_msg"] = {
                                     "texto": (
                                         f"✅ SIOE importado com sucesso! "
