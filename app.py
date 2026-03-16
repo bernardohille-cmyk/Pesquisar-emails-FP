@@ -288,7 +288,7 @@ def carregar_log_github():
 # CARREGAR BASE PRINCIPAL (Excel INA)
 # ─────────────────────────────────────────────────────
 @st.cache_data(show_spinner=False)
-def carregar_base_excel(file_bytes: bytes) -> pd.DataFrame:
+def carregar_base_excel(file_bytes: bytes, filename: str = "") -> pd.DataFrame:
     xl = pd.ExcelFile(io.BytesIO(file_bytes))
     frames = []
     for sheet in xl.sheet_names:
@@ -505,7 +505,7 @@ with st.sidebar:
             st.session_state["_ext_key"]   = None
             st.cache_data.clear()
             with st.spinner("A carregar base Excel..."):
-                st.session_state["df"] = carregar_base_excel(file_bytes)
+                st.session_state["df"] = carregar_base_excel(file_bytes, uploaded.name)
                 st.session_state["dados_alterados"] = True
 
     if st.session_state["df"] is not None:
