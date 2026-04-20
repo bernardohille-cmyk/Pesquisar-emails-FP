@@ -1,0 +1,384 @@
+{
+  "versao": "1.0",
+  "atualizado": "2026-04-20",
+  "categorias": [
+    {
+      "id": "secretaria_geral_governo",
+      "nome": "Secretaria-Geral do Governo",
+      "ordem": 1,
+      "cor": "#701471",
+      "sheets": [
+        "Secretaria-Geral Governo",
+        "Secretaria Geral Governo"
+      ],
+      "tipos_sioe": []
+    },
+    {
+      "id": "secretarias_gerais",
+      "nome": "Secretarias-Gerais",
+      "ordem": 2,
+      "cor": "#701471",
+      "sheets": [
+        "Secretarias-Gerais",
+        "Secretarias Gerais"
+      ],
+      "tipos_sioe": [
+        "Secretaria-geral"
+      ]
+    },
+    {
+      "id": "direcoes_gerais",
+      "nome": "Direções-Gerais",
+      "ordem": 3,
+      "cor": "#701471",
+      "sheets": [
+        "Direções-Gerais",
+        "Direcoes-Gerais",
+        "Direções Gerais"
+      ],
+      "tipos_sioe": [
+        "Direção-geral"
+      ]
+    },
+    {
+      "id": "inspecoes_gerais",
+      "nome": "Inspeções-Gerais",
+      "ordem": 4,
+      "cor": "#701471",
+      "sheets": [
+        "Inspeções-Gerais",
+        "Inspecoes-Gerais"
+      ],
+      "tipos_sioe": [
+        "Inspeção-geral",
+        "Inspeção Regional"
+      ]
+    },
+    {
+      "id": "gabinetes_governo",
+      "nome": "Gabinetes do Governo (Ministros e SE)",
+      "ordem": 5,
+      "cor": "#701471",
+      "sheets": [
+        "Gabinetes Ministros e SE",
+        "Gabinetes do Governo"
+      ],
+      "tipos_sioe": [
+        "Gabinete 1.º Ministro",
+        "Gabinete Ministro",
+        "Gabinete Secretário de Estado",
+        "Gabinete"
+      ]
+    },
+    {
+      "id": "institutos_agencias",
+      "nome": "Institutos e Agências",
+      "ordem": 6,
+      "cor": "#B1005D",
+      "sheets": [
+        "Institutos-Agências",
+        "Institutos-Agencias"
+      ],
+      "tipos_sioe": [
+        "Instituto Público",
+        "Agência",
+        "Centro de Formação Profissional",
+        "Banco Central"
+      ]
+    },
+    {
+      "id": "autoridades_reguladoras",
+      "nome": "Autoridades e Entidades Reguladoras",
+      "ordem": 7,
+      "cor": "#B1005D",
+      "sheets": [
+        "Autoridades"
+      ],
+      "tipos_sioe": [
+        "Entidade Administrativa Independente",
+        "Órgão Independente"
+      ]
+    },
+    {
+      "id": "fundacoes",
+      "nome": "Fundações",
+      "ordem": 8,
+      "cor": "#B1005D",
+      "sheets": [
+        "Fundações",
+        "Fundacoes"
+      ],
+      "tipos_sioe": [
+        "Fundação",
+        "Fundo Autónomo",
+        "Fundo da Segurança Social"
+      ]
+    },
+    {
+      "id": "comissoes_estruturas",
+      "nome": "Comissões e Estruturas Consultivas",
+      "ordem": 9,
+      "cor": "#B1005D",
+      "sheets": [
+        "Comissões",
+        "Comissoes"
+      ],
+      "tipos_sioe": [
+        "Estrutura temporária - comissão",
+        "Estrutura temporária - estrutura de missão",
+        "Estrutura temporária - grupo de projeto",
+        "Estrutura temporária - grupo de trabalho",
+        "Órgão consultivo"
+      ]
+    },
+    {
+      "id": "academias_cientificas",
+      "nome": "Academias Científicas",
+      "ordem": 10,
+      "cor": "#FF8F2B",
+      "sheets": [
+        "Academias"
+      ],
+      "tipos_sioe": []
+    },
+    {
+      "id": "catedras_unesco",
+      "nome": "Cátedras Nacionais / UNESCO",
+      "ordem": 11,
+      "cor": "#FF8F2B",
+      "sheets": [
+        "Cátedras Nacionais",
+        "Catedras Nacionais"
+      ],
+      "tipos_sioe": []
+    },
+    {
+      "id": "ensino_investigacao",
+      "nome": "Ensino Superior e Investigação",
+      "ordem": 12,
+      "cor": "#FF8F2B",
+      "sheets": [
+        "Ensino e Investigação",
+        "Ensino e Investigacao",
+        "Ensino Superior"
+      ],
+      "tipos_sioe": [
+        "Unidade Orgânica de Ensino e Investigação",
+        "Unidade Orgânica de Investigação"
+      ]
+    },
+    {
+      "id": "defesa_seguranca",
+      "nome": "Defesa e Segurança",
+      "ordem": 13,
+      "cor": "#212121",
+      "sheets": [
+        "Defesa",
+        "Forças Armadas",
+        "Forças de Segurança"
+      ],
+      "tipos_sioe": [
+        "Força de Segurança",
+        "Forças Armadas"
+      ]
+    },
+    {
+      "id": "tribunais",
+      "nome": "Tribunais e Justiça",
+      "ordem": 14,
+      "cor": "#212121",
+      "sheets": [
+        "Tribunais"
+      ],
+      "tipos_sioe": [
+        "Tribunal"
+      ]
+    },
+    {
+      "id": "ra_gabinetes",
+      "nome": "Regiões Autónomas — Gabinetes",
+      "ordem": 15,
+      "cor": "#00A19A",
+      "sheets": [
+        "Gabinetes Regionais"
+      ],
+      "tipos_sioe": [
+        "Gabinete Secretário Regional",
+        "Gabinete Presidente Regional",
+        "Gabinete Vice-Presidente Regional",
+        "Gabinete do Representante da República"
+      ]
+    },
+    {
+      "id": "ra_servicos",
+      "nome": "Regiões Autónomas — Direções Regionais",
+      "ordem": 16,
+      "cor": "#00A19A",
+      "sheets": [
+        "Direções-Regionais",
+        "Direcoes-Regionais"
+      ],
+      "tipos_sioe": [
+        "Direção Regional"
+      ]
+    },
+    {
+      "id": "camaras_municipais",
+      "nome": "Câmaras Municipais",
+      "ordem": 17,
+      "cor": "#2B7A78",
+      "sheets": [
+        "Câmaras Municipais",
+        "Camaras Municipais"
+      ],
+      "tipos_sioe": [
+        "Município"
+      ]
+    },
+    {
+      "id": "juntas_freguesias",
+      "nome": "Juntas de Freguesia",
+      "ordem": 18,
+      "cor": "#2B7A78",
+      "sheets": [
+        "Juntas de Freguesias",
+        "Juntas de Freguesia",
+        "Freguesias"
+      ],
+      "tipos_sioe": [
+        "Junta de Freguesia"
+      ]
+    },
+    {
+      "id": "comunidades_intermunicipais",
+      "nome": "Comunidades Intermunicipais e Áreas Metropolitanas",
+      "ordem": 19,
+      "cor": "#2B7A78",
+      "sheets": [
+        "Comunidades Intermunicipais"
+      ],
+      "tipos_sioe": [
+        "Comunidade intermunicipal",
+        "Área Metropolitana",
+        "Federação de Municípios"
+      ]
+    },
+    {
+      "id": "associacoes_municipios",
+      "nome": "Associações de Municípios",
+      "ordem": 20,
+      "cor": "#2B7A78",
+      "sheets": [
+        "Associações de Municípios",
+        "Associacoes de Municipios"
+      ],
+      "tipos_sioe": [
+        "Associação de Municípios de fins específicos",
+        "Associação de Freguesias"
+      ]
+    },
+    {
+      "id": "servicos_municipalizados",
+      "nome": "Serviços Municipalizados",
+      "ordem": 21,
+      "cor": "#2B7A78",
+      "sheets": [
+        "Serviços Municipalizados",
+        "Servicos Municipalizados"
+      ],
+      "tipos_sioe": [
+        "Serviço Municipalizado e Intermunicipalizado"
+      ]
+    },
+    {
+      "id": "empresas_publicas",
+      "nome": "Empresas Públicas (Estado)",
+      "ordem": 22,
+      "cor": "#5B8DEF",
+      "sheets": [
+        "Empresas Públicas",
+        "Empresas Publicas"
+      ],
+      "tipos_sioe": [
+        "Entidade Pública Empresarial",
+        "Sociedade Anónima",
+        "Sociedade por Quotas",
+        "Cooperativa",
+        "Agrupamento Complementar de Empresas "
+      ]
+    },
+    {
+      "id": "setor_empresarial_regional",
+      "nome": "Setor Empresarial Regional",
+      "ordem": 23,
+      "cor": "#5B8DEF",
+      "sheets": [
+        "Sector Empresarial Regional",
+        "Setor Empresarial Regional"
+      ],
+      "tipos_sioe": [
+        "Entidade Pública Empresarial Regional",
+        "Entidade Empresarial Regional"
+      ]
+    },
+    {
+      "id": "setor_empresarial_local",
+      "nome": "Setor Empresarial Local",
+      "ordem": 24,
+      "cor": "#5B8DEF",
+      "sheets": [
+        "Empresas Municipais",
+        "Setor Empresarial Local"
+      ],
+      "tipos_sioe": [
+        "Empresa Municipal",
+        "Empresa Intermunicipal",
+        "Entidade Empresarial Municipal"
+      ]
+    },
+    {
+      "id": "ordens_profissionais",
+      "nome": "Ordens Profissionais",
+      "ordem": 25,
+      "cor": "#595959",
+      "sheets": [
+        "Ordens Profissionais"
+      ],
+      "tipos_sioe": []
+    },
+    {
+      "id": "associacoes",
+      "nome": "Associações",
+      "ordem": 26,
+      "cor": "#595959",
+      "sheets": [
+        "Associações",
+        "Associacoes"
+      ],
+      "tipos_sioe": [
+        "Associação"
+      ]
+    },
+    {
+      "id": "outros",
+      "nome": "Outros",
+      "ordem": 98,
+      "cor": "#595959",
+      "sheets": [
+        "Outros"
+      ],
+      "tipos_sioe": [
+        "Entidade Regional de Turismo",
+        "Estrutura atípica"
+      ]
+    },
+    {
+      "id": "historicos_removidos",
+      "nome": "Históricos / Removidos",
+      "ordem": 99,
+      "cor": "#CCCCCC",
+      "sheets": [],
+      "tipos_sioe": []
+    }
+  ]
+}
