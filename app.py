@@ -536,36 +536,36 @@ with tab4:
         merged_full["categoria"] = merged_full["categoria_id"].apply(cat_nome)
         cols_x = ["categoria","siglas","designacao","ministerio","cargo","nome","email","telefone","sioe_code","website"]
         cols_x = [c for c in cols_x if c in merged_full.columns]
-        def _safe_sheet_name(name, used):
-           s = re.sub(r'[\\/*?:\[\]]', ' ', str(name or '')).strip()
-           s = re.sub(r'\s+', ' ', s)
-           if not s:
-               s = "Sem categoria"
-           if s.lower() == "history":
-               s = "Historico"
-           s = s[:31]
-           base, i = s, 2
-           while s in used:
-               suf = f" ({i})"
-               s = (base[:31 - len(suf)]) + suf
-               i += 1
-           used.add(s)
-           return s
+       def _safe_sheet_name(name, used):
+            s = re.sub(r'[\\/*?:\[\]]', ' ', str(name or '')).strip()
+            s = re.sub(r'\s+', ' ', s)
+            if not s:
+                s = "Sem categoria"
+            if s.lower() == "history":
+                s = "Historico"
+            s = s[:31]
+            base, i = s, 2
+            while s in used:
+                suf = f" ({i})"
+                s = (base[:31 - len(suf)]) + suf
+                i += 1
+            used.add(s)
+            return s
 
-       buf = io.BytesIO()
-       cmap = cat_ordem_map()
-       with pd.ExcelWriter(buf, engine="openpyxl") as w:
-           used_names = set()
-           merged_full[cols_x].to_excel(
-               w, sheet_name=_safe_sheet_name("Todos", used_names), index=False)
-           for cid in sorted(merged_full["categoria_id"].dropna().unique(),
-                             key=lambda c: cmap.get(c, 99)):
-               sub = merged_full[merged_full["categoria_id"] == cid][cols_x]
-               if len(sub):
-                   sub.to_excel(
-                       w,
-                       sheet_name=_safe_sheet_name(cat_nome(cid), used_names),
-                       index=False)
+        buf = io.BytesIO()
+        cmap = cat_ordem_map()
+        with pd.ExcelWriter(buf, engine="openpyxl") as w:
+            used_names = set()
+            merged_full[cols_x].to_excel(
+                w, sheet_name=_safe_sheet_name("Todos", used_names), index=False)
+            for cid in sorted(merged_full["categoria_id"].dropna().unique(),
+                              key=lambda c: cmap.get(c, 99)):
+                sub = merged_full[merged_full["categoria_id"] == cid][cols_x]
+                if len(sub):
+                    sub.to_excel(
+                        w,
+                        sheet_name=_safe_sheet_name(cat_nome(cid), used_names),
+                        index=False)
         st.download_button("⬇ Excel completo (sheet por categoria)",
             data=buf.getvalue(),
             file_name=f"AP_Contactos_{datetime.now().strftime('%Y%m%d')}.xlsx",
