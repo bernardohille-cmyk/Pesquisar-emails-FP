@@ -551,4 +551,6 @@ with tab4:
             sheets = xl.sheet_names
             st.caption(
                 f"{len(sheets)} sheets detectadas: {', '.join(sheets[:8])}"
-                f
+            )
+        except Exception as e:
+            st.error(f"Erro ao ler o ficheiro: {e}")
