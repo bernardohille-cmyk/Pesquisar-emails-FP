@@ -537,11 +537,13 @@ with tab4:
         cols_x = ["categoria","siglas","designacao","ministerio","cargo","nome","email","telefone","sioe_code","website"]
         cols_x = [c for c in cols_x if c in merged_full.columns]
         buf = io.BytesIO()
-        cmap = cat_ordem_map()
-        with pd.ExcelWriter(buf, engine="openpyxl") as w:
-            merged_full[cols_x].to_excel(w, sheet_name="Todos", index=False)
-            for cid in sorted(merged_full["categoria_id"].dropna().unique(), key=lambda c: cmap.get(c, 99)):
-                sub = merged_full[merged_full["categoria_id"]==cid][cols_x]
+   cmap = cat_ordem_map()
+   with pd.ExcelWriter(buf, engine="openpyxl") as w:
+       merged_full[cols_x].to_excel(w, sheet_name="Todos", index=False)
+       for cid in sorted(merged_full["categoria_id"].dropna().unique(), key=lambda c: cmap.get(c, 99)):
+           sub = merged_full[merged_full["categoria_id"]==cid][cols_x]
+           if len(sub):
+               sub.to_excel(w, sheet_name=cat_nome(cid)[:31], index=False)
                 if len(sub):
                     sub.to_excel(w, sheet_name=cat_nome(cid)[:31], index=False)
         st.download_button("⬇ Excel completo (sheet por categoria)",
