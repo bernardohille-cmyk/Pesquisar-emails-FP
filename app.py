@@ -198,6 +198,7 @@ defaults = {
     "ent": None, "dir": None,
     "sha_ent": None, "sha_dir": None,
     "carregado": False,
+    "_load_retry": 0,
     "alterado_ent": False, "alterado_dir": False,
     "msg": None, "log_import": None,
     "_file_key": None, "_ext_key": None, "_ext_bytes": None, "_ext_name": None,
@@ -213,11 +214,17 @@ if not st.session_state["carregado"]:
     with st.spinner(f"A carregar {storage_label}..."):
         e, sha_e = load_entidades()
         d, sha_d = load_dirigentes()
+        # Se o GitHub estiver ativo mas o arranque vier vazio, tentar mais uma vez
+        # em vez de prender a sessão num falso "0 entidades".
+        if gh_cfg() and len(e) == 0 and len(d) == 0 and st.session_state["_load_retry"] < 1:
+            st.session_state["_load_retry"] += 1
+            st.rerun()
         st.session_state["ent"] = e
         st.session_state["dir"] = d
         st.session_state["sha_ent"] = sha_e
         st.session_state["sha_dir"] = sha_d
         st.session_state["carregado"] = True
+        st.session_state["_load_retry"] = 0
 
 ent = st.session_state["ent"] if st.session_state["ent"] is not None else pd.DataFrame(columns=COLS_ENTIDADE)
 dir_ = st.session_state["dir"] if st.session_state["dir"] is not None else pd.DataFrame(columns=COLS_DIRIGENTE)

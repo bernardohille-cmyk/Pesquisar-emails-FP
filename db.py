@@ -9,6 +9,7 @@ import io
 import json
 from pathlib import Path
 import re
+import time
 import unicodedata
 from datetime import datetime
 from typing import Optional
@@ -95,6 +96,12 @@ def _gh_repo():
 def _gh_contents_url(path: str) -> str:
     return "https://api.github.com/repos/" + _gh_repo() + "/contents/" + path
 
+def _gh_branch() -> str:
+    return _secret("GITHUB_BRANCH", "main")
+
+def _gh_raw_url(path: str) -> str:
+    return "https://raw.githubusercontent.com/" + _gh_repo() + "/" + _gh_branch() + "/" + path
+
 def _local_path(path: str) -> Path:
     return BASE_DIR / path
 
@@ -120,32 +127,34 @@ def gh_get(path):
     """Lê um ficheiro do GitHub ou, sem secrets, do disco local."""
     if not gh_cfg():
         return _local_get(path)
-    try:
-        url = _gh_contents_url(path)
-        r = requests.get(url, headers=_gh_headers(), timeout=15)
-        if r.status_code != 200:
-            return None, None
-        data = r.json()
-        sha = data.get("sha")
-        content = data.get("content")
-        encoding = data.get("encoding")
-        if content and encoding == "base64":
-            return base64.b64decode(content), sha
+    url = _gh_contents_url(path)
+    raw_url = _gh_raw_url(path)
+    last_sha = None
+    for attempt in range(3):
+        try:
+            r = requests.get(url, headers=_gh_headers(), timeout=20)
+            if r.status_code == 200:
+                data = r.json()
+                last_sha = data.get("sha")
+                content = data.get("content")
+                encoding = data.get("encoding")
+                if content and encoding == "base64":
+                    return base64.b64decode(content), last_sha
 
-        # Ficheiros >1 MB vêm sem conteúdo inline; pedir o raw diretamente.
-        raw_headers = _gh_headers() | {"Accept": "application/vnd.github.raw+json"}
-        raw_resp = requests.get(url, headers=raw_headers, timeout=30)
-        if raw_resp.status_code == 200 and raw_resp.content:
-            return raw_resp.content, sha
+                download_url = data.get("download_url")
+                if download_url:
+                    raw_resp = requests.get(download_url, timeout=30)
+                    if raw_resp.status_code == 200 and raw_resp.content:
+                        return raw_resp.content, last_sha
 
-        download_url = data.get("download_url")
-        if download_url:
-            raw_resp = requests.get(download_url, timeout=30)
-            if raw_resp.status_code == 200:
-                return raw_resp.content, sha
-        return None, sha
-    except Exception:
-        return None, None
+            raw_resp = requests.get(raw_url, timeout=30)
+            if raw_resp.status_code == 200 and raw_resp.content:
+                return raw_resp.content, last_sha
+        except Exception:
+            pass
+        if attempt < 2:
+            time.sleep(attempt + 1)
+    return None, last_sha
 
 def gh_put(path, content, sha, mensagem):
     """Escreve um ficheiro no GitHub ou, sem secrets, no disco local."""
@@ -209,12 +218,12 @@ def load_dirigentes():
         return _df_vazio(COLS_DIRIGENTE), sha
 
 def save_entidades(df, sha):
-    csv_str = df[COLS_ENTIDADE].to_csv(index=False)
+    csv_str = df[COLS_ENTIDADE].to_csv(index=False, lineterminator="\n")
     return gh_put(PATH_ENTIDADES, csv_str.encode("utf-8"), sha,
                   "Entidades: " + str(len(df)) + " registos (" + datetime.now().strftime('%Y-%m-%d %H:%M') + ")")
 
 def save_dirigentes(df, sha):
-    csv_str = df[COLS_DIRIGENTE].to_csv(index=False)
+    csv_str = df[COLS_DIRIGENTE].to_csv(index=False, lineterminator="\n")
     return gh_put(PATH_DIRIGENTES, csv_str.encode("utf-8"), sha,
                   "Dirigentes: " + str(len(df)) + " registos (" + datetime.now().strftime('%Y-%m-%d %H:%M') + ")")
 
