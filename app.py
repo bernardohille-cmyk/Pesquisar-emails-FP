@@ -547,10 +547,123 @@ with tab4:
         st.write("**Ficheiro:** " + nm)
         eh_sioe = "export" in nm.lower() and "pesquisa" in nm.lower()
         try:
-            xl = pd.ExcelFile(io.BytesIO(st.session_state["_ext_bytes"]))
-            sheets = xl.sheet_names
-            st.caption(
-                f"{len(sheets)} sheets detectadas: {', '.join(sheets[:8])}"
-            )
+            if eh_sioe:
+                ent_novo, dir_novo, log = importar_sioe(st.session_state["_ext_bytes"])
+                st.success(f"SIOE: {len(ent_novo):,} entidades · {len(dir_novo):,} dirigentes detectados.")
+            else:
+                ent_novo, dir_novo, log = importar_excel_ina(st.session_state["_ext_bytes"])
+                st.success(f"INA: {len(ent_novo):,} entidades · {len(dir_novo):,} dirigentes detectados.")
+            with st.expander("Detalhe do import"):
+                st.json(log)
+            st.markdown("#### Pré-visualização")
+            c1, c2 = st.columns(2)
+            with c1:
+                st.caption(f"Entidades ({len(ent_novo):,})")
+                st.dataframe(ent_novo.head(30), use_container_width=True, hide_index=True)
+            with c2:
+                st.caption(f"Dirigentes ({len(dir_novo):,})")
+                st.dataframe(dir_novo.head(30), use_container_width=True, hide_index=True)
+            st.markdown("---")
+            st.markdown("#### Aplicar à base")
+            col_a, col_b = st.columns([1, 1])
+            with col_a:
+                if st.button("✅ Fazer merge na base", type="primary", use_container_width=True):
+                    ent_base = st.session_state["ent"] if st.session_state["ent"] is not None else pd.DataFrame(columns=COLS_ENTIDADE)
+                    dir_base = st.session_state["dir"] if st.session_state["dir"] is not None else pd.DataFrame(columns=COLS_DIRIGENTE)
+                    ent_merged, log_e = merge_entidades(ent_base, ent_novo)
+                    dir_merged, log_d = merge_dirigentes(dir_base, dir_novo, ent_merged, ent_novo)
+                    st.session_state["ent"] = ent_merged
+                    st.session_state["dir"] = dir_merged
+                    st.session_state["alterado_ent"] = True
+                    st.session_state["alterado_dir"] = True
+                    st.session_state["log_import"] = {"entidades": log_e, "dirigentes": log_d}
+                    st.session_state["msg"] = ("ok", f"✅ Merge OK. Entidades: {log_e}. Dirigentes: {log_d}. Não esqueças de 'Guardar alterações' na sidebar.")
+                    st.session_state["_ext_bytes"] = None
+                    st.session_state["_ext_name"] = None
+                    st.session_state["_ext_key"] = None
+                    st.session_state["_file_key"] = None
+                    st.rerun()
+            with col_b:
+                if st.button("✕ Descartar ficheiro", use_container_width=True):
+                    st.session_state["_ext_bytes"] = None
+                    st.session_state["_ext_name"] = None
+                    st.session_state["_ext_key"] = None
+                    st.session_state["_file_key"] = None
+                    st.rerun()
         except Exception as e:
-            st.error(f"Erro ao ler o ficheiro: {e}")
+            st.error(f"Erro ao processar o ficheiro: {e}")
+            st.exception(e)
+
+    st.markdown("---")
+    st.markdown("### Exportar")
+    if len(ent) == 0:
+        st.info("Base vazia — nada para exportar.")
+    else:
+        buf = io.BytesIO()
+        with pd.ExcelWriter(buf, engine="openpyxl") as writer:
+            used = set()
+            cats_map = cat_ordem_map()
+            ent_ord = ent.copy()
+            ent_ord["__ord"] = ent_ord["categoria_id"].map(cats_map).fillna(999)
+            for cat_id, grupo in ent_ord.sort_values(["__ord", "designacao"]).groupby("categoria_id", sort=False):
+                sheet = safe_sheet_name(cat_nome(cat_id), used)
+                grupo_out = grupo.drop(columns=["__ord"], errors="ignore")
+                grupo_out.to_excel(writer, sheet_name=sheet, index=False)
+            if len(dir_):
+                dir_.to_excel(writer, sheet_name=safe_sheet_name("Dirigentes", used), index=False)
+        st.download_button(
+            "⬇ Descarregar base completa (.xlsx)",
+            data=buf.getvalue(),
+            file_name=f"AP_Contactos_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            type="primary",
+            use_container_width=True,
+        )
+
+# ─────────── TAB 5: REVISÃO (DRE) ───────────
+with tab5:
+    st.markdown("### Sugestões a partir do DRE")
+    st.caption("Lê publicações recentes no DRE e propõe alterações a dirigentes. Aprovação manual.")
+    col1, col2 = st.columns([1, 3])
+    with col1:
+        dias = st.number_input("Dias", min_value=1, max_value=180, value=30, step=1)
+    with col2:
+        if st.button("🔎 Buscar sugestões no DRE", use_container_width=True):
+            with st.spinner("A consultar DRE..."):
+                try:
+                    sug = sugestoes_a_partir_de_dre(ent, dias=int(dias))
+                    guardar_pendentes(sug)
+                    st.success(f"{len(sug)} sugestões guardadas.")
+                except Exception as e:
+                    st.error(f"Erro no DRE: {e}")
+    pendentes = carregar_pendentes()
+    if not pendentes:
+        st.info("Sem sugestões pendentes.")
+    else:
+        st.write(f"**{len(pendentes)}** sugestões pendentes")
+        df_sug = pd.DataFrame(pendentes)
+        st.dataframe(df_sug, use_container_width=True, hide_index=True)
+        if st.button("🗑 Limpar sugestões pendentes"):
+            guardar_pendentes([])
+            st.rerun()
+
+# ─────────── TAB 6: HISTÓRICO ───────────
+with tab6:
+    st.markdown("### Histórico de dirigentes")
+    if len(dir_) == 0:
+        st.info("Sem dirigentes registados.")
+    else:
+        hist = dir_[dir_["fim"].fillna("") != ""] if "fim" in dir_.columns else pd.DataFrame()
+        if len(hist) == 0:
+            st.info("Nenhum dirigente com saída registada.")
+        else:
+            joined = hist.merge(ent[["entity_id", "designacao"]], on="entity_id", how="left")
+            st.write(f"**{len(joined):,}** registos históricos")
+            st.dataframe(
+                joined[["designacao", "cargo", "nome", "email", "inicio", "fim", "fonte"]].rename(
+                    columns={"designacao": "Entidade", "cargo": "Cargo", "nome": "Nome",
+                             "email": "Email", "inicio": "Início", "fim": "Fim", "fonte": "Fonte"}
+                ),
+                use_container_width=True,
+                hide_index=True,
+            )
