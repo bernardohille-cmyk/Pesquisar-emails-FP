@@ -7,6 +7,7 @@ from __future__ import annotations
 import base64
 import io
 import json
+from pathlib import Path
 import re
 import unicodedata
 from datetime import datetime
@@ -23,6 +24,7 @@ PATH_ENTIDADES  = "dados/entidades.csv"
 PATH_DIRIGENTES = "dados/dirigentes.csv"
 PATH_CATEGORIAS = "dados/categorias.json"
 PATH_PENDENTES  = "dados/pendentes.json"
+BASE_DIR = Path(__file__).resolve().parent
 
 COLS_ENTIDADE = [
     "entity_id", "designacao", "siglas", "sioe_code", "nif",
@@ -74,19 +76,47 @@ def tel_ok(t) -> str:
 # ═══════════════════════════════════════════════════
 # GITHUB I/O
 # ═══════════════════════════════════════════════════
+def _secret(name: str, default: str = "") -> str:
+    try:
+        return st.secrets.get(name, default)
+    except Exception:
+        return default
+
 def gh_cfg():
-    return bool(st.secrets.get("GITHUB_TOKEN","")) and bool(st.secrets.get("GITHUB_REPO",""))
+    return bool(_secret("GITHUB_TOKEN")) and bool(_secret("GITHUB_REPO"))
 
 def _gh_headers():
-    token = st.secrets.get("GITHUB_TOKEN","")
+    token = _secret("GITHUB_TOKEN")
     return {"Authorization": "token " + token, "Accept": "application/vnd.github+json"}
 
 def _gh_repo():
-    return st.secrets.get("GITHUB_REPO","")
+    return _secret("GITHUB_REPO")
+
+def _local_path(path: str) -> Path:
+    return BASE_DIR / path
+
+def _local_get(path: str):
+    try:
+        p = _local_path(path)
+        if not p.exists():
+            return None, None
+        return p.read_bytes(), None
+    except Exception:
+        return None, None
+
+def _local_put(path: str, content: bytes):
+    try:
+        p = _local_path(path)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_bytes(content)
+        return True, "OK", None
+    except Exception as e:
+        return False, "Excepção local: " + str(e), None
 
 def gh_get(path):
-    """Lê um ficheiro do repo. Devolve (bytes, sha) ou (None, None)."""
-    if not gh_cfg(): return None, None
+    """Lê um ficheiro do GitHub ou, sem secrets, do disco local."""
+    if not gh_cfg():
+        return _local_get(path)
     try:
         url = "https://api.github.com/repos/" + _gh_repo() + "/contents/" + path
         r = requests.get(url, headers=_gh_headers(), timeout=15)
@@ -97,8 +127,9 @@ def gh_get(path):
         return None, None
 
 def gh_put(path, content, sha, mensagem):
-    """Escreve um ficheiro. Devolve (ok, msg, novo_sha)."""
-    if not gh_cfg(): return False, "GitHub não configurado", sha
+    """Escreve um ficheiro no GitHub ou, sem secrets, no disco local."""
+    if not gh_cfg():
+        return _local_put(path, content)
     try:
         url = "https://api.github.com/repos/" + _gh_repo() + "/contents/" + path
         payload = {"message": mensagem, "content": base64.b64encode(content).decode()}

@@ -206,8 +206,11 @@ for k, v in defaults.items():
     if k not in st.session_state:
         st.session_state[k] = v
 
-if not st.session_state["carregado"] and gh_cfg():
-    with st.spinner("A carregar base permanente do GitHub..."):
+storage_label = "GitHub" if gh_cfg() else "base local"
+storage_subtitle = "persistência GitHub" if gh_cfg() else "persistência local"
+
+if not st.session_state["carregado"]:
+    with st.spinner(f"A carregar {storage_label}..."):
         e, sha_e = load_entidades()
         d, sha_d = load_dirigentes()
         st.session_state["ent"] = e
@@ -247,13 +250,13 @@ with st.sidebar:
         )
     else:
         st.markdown(
-            "<div class='alerta-banner'>⚠ GitHub não configurado.<br>"
-            "Define <code>GITHUB_TOKEN</code> e <code>GITHUB_REPO</code> nos Secrets.</div>",
+            f"<div class='ok-banner'>💾 Base local activa<br>"
+            f"<span style='color:#666;font-size:.78rem'>{len(ent):,} entidades · {len(dir_):,} dirigentes</span></div>",
             unsafe_allow_html=True,
         )
 
     pendente = st.session_state["alterado_ent"] or st.session_state["alterado_dir"]
-    if pendente and gh_cfg():
+    if pendente:
         if st.button("💾 Guardar alterações", type="primary", use_container_width=True):
             ok_e = ok_d = True
             msg = ""
@@ -303,7 +306,7 @@ with st.sidebar:
     so_email = st.checkbox("Só com email", value=False)
 
     st.markdown("---")
-    if st.button("↻ Recarregar do GitHub", use_container_width=True):
+    if st.button("↻ Recarregar dados", use_container_width=True):
         st.session_state["carregado"] = False
         st.rerun()
 
@@ -313,7 +316,7 @@ with st.sidebar:
 # ═══════════════════════════════════════════════════
 render_header(
     "Contactos da Administração Pública",
-    "Base operacional · 2 ou 3 utilizadores · persistência GitHub",
+    f"Base operacional · 2 ou 3 utilizadores · {storage_subtitle}",
 )
 
 if st.session_state["msg"]:
