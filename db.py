@@ -92,6 +92,9 @@ def _gh_headers():
 def _gh_repo():
     return _secret("GITHUB_REPO")
 
+def _gh_contents_url(path: str) -> str:
+    return "https://api.github.com/repos/" + _gh_repo() + "/contents/" + path
+
 def _local_path(path: str) -> Path:
     return BASE_DIR / path
 
@@ -118,11 +121,29 @@ def gh_get(path):
     if not gh_cfg():
         return _local_get(path)
     try:
-        url = "https://api.github.com/repos/" + _gh_repo() + "/contents/" + path
+        url = _gh_contents_url(path)
         r = requests.get(url, headers=_gh_headers(), timeout=15)
-        if r.status_code != 200: return None, None
+        if r.status_code != 200:
+            return None, None
         data = r.json()
-        return base64.b64decode(data["content"]), data["sha"]
+        sha = data.get("sha")
+        content = data.get("content")
+        encoding = data.get("encoding")
+        if content and encoding == "base64":
+            return base64.b64decode(content), sha
+
+        # Ficheiros >1 MB vêm sem conteúdo inline; pedir o raw diretamente.
+        raw_headers = _gh_headers() | {"Accept": "application/vnd.github.raw+json"}
+        raw_resp = requests.get(url, headers=raw_headers, timeout=30)
+        if raw_resp.status_code == 200 and raw_resp.content:
+            return raw_resp.content, sha
+
+        download_url = data.get("download_url")
+        if download_url:
+            raw_resp = requests.get(download_url, timeout=30)
+            if raw_resp.status_code == 200:
+                return raw_resp.content, sha
+        return None, sha
     except Exception:
         return None, None
 
@@ -131,7 +152,7 @@ def gh_put(path, content, sha, mensagem):
     if not gh_cfg():
         return _local_put(path, content)
     try:
-        url = "https://api.github.com/repos/" + _gh_repo() + "/contents/" + path
+        url = _gh_contents_url(path)
         payload = {"message": mensagem, "content": base64.b64encode(content).decode()}
         if sha: payload["sha"] = sha
         r = requests.put(url, headers=_gh_headers(), data=json.dumps(payload), timeout=30)
