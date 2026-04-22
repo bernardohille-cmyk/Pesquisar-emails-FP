@@ -153,12 +153,27 @@ def gh_put(path, content, sha, mensagem):
         return _local_put(path, content)
     try:
         url = _gh_contents_url(path)
-        payload = {"message": mensagem, "content": base64.b64encode(content).decode()}
-        if sha: payload["sha"] = sha
-        r = requests.put(url, headers=_gh_headers(), data=json.dumps(payload), timeout=30)
+        def _put(current_sha):
+            payload = {"message": mensagem, "content": base64.b64encode(content).decode()}
+            if current_sha:
+                payload["sha"] = current_sha
+            return requests.put(url, headers=_gh_headers(), data=json.dumps(payload), timeout=30)
+
+        r = _put(sha)
         if r.status_code in (200, 201):
             novo_sha = r.json().get("content", {}).get("sha", sha)
             return True, "OK", novo_sha
+
+        # Sha antigo na sessão: recarregar o ficheiro remoto e tentar uma vez mais.
+        if r.status_code == 409:
+            latest_raw, latest_sha = gh_get(path)
+            if latest_sha:
+                if latest_raw == content:
+                    return True, "OK", latest_sha
+                r = _put(latest_sha)
+                if r.status_code in (200, 201):
+                    novo_sha = r.json().get("content", {}).get("sha", latest_sha)
+                    return True, "OK", novo_sha
         return False, "Erro GitHub " + str(r.status_code) + ": " + r.text[:200], sha
     except Exception as e:
         return False, "Excepção: " + str(e), sha
